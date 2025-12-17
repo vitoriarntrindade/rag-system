@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+# Vector DB (Chroma)
+db/
+chroma/
+*.sqlite3
+.idea/
+logs/
+__pycache__
