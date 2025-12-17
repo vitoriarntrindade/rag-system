@@ -3,6 +3,8 @@
 Um sistema de **Retrieval-Augmented Generation (RAG)** modular e pronto para produção, com ingestão flexível de documentos, arquitetura escalável e suporte a múltiplos formatos de documentos.
 
 ---
+![unnamed](https://github.com/user-attachments/assets/74ff963a-b233-4c1e-a69d-e24bcf44a52f)
+
 
 ## 🚀 Funcionalidades
 
