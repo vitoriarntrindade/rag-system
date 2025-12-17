@@ -195,7 +195,14 @@ O **RAG System** foi projetado para funcionar como um **componente reutilizável
 from pathlib import Path
 from src.rag_pipeline import RAGPipeline
 
-pipeline = RAGPipeline(openai_api_key="YOUR_API_KEY")
+# Caminho onde o banco vetorial (ChromaDB) será armazenado
+vector_store_path = Path("./db/chroma_db")
+
+# Inicialização do pipeline RAG
+pipeline = RAGPipeline(
+    openai_api_key="YOUR_API_KEY",
+    vector_store_path=vector_store_path
+)
 
 pipeline.ingest_documents(
     directory=Path("data/"),
