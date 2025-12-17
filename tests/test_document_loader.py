@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langchain_core.documents import Document
 
-from rag_system.src.document_loader import SUPPORTED_LOADERS, DocumentLoader
+from src.document_loader import SUPPORTED_LOADERS, DocumentLoader
 
 
 class TestDocumentLoaderInitialization:

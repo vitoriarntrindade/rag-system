@@ -5,9 +5,9 @@ from typing import List
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 
-from rag_system.config.settings import get_settings
-from rag_system.src.utils.logger import setup_logger
-from rag_system.src.vector_store import VectorStore
+from config.settings import get_settings
+from src.utils.logger import setup_logger
+from src.vector_store import VectorStore
 
 logger = setup_logger(__name__)
 

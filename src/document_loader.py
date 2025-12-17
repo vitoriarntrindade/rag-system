@@ -11,7 +11,7 @@ from langchain_community.document_loaders import (
 )
 from langchain_core.documents import Document
 
-from rag_system.src.utils.logger import setup_logger
+from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 

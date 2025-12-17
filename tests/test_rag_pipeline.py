@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 from langchain_core.documents import Document
 
-from rag_system.src.rag_pipeline import RAGPipeline
+from src.rag_pipeline import RAGPipeline
 
 
 class TestRAGPipelineInitialization:

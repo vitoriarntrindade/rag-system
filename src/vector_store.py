@@ -7,8 +7,8 @@ from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 
-from rag_system.config.settings import get_settings
-from rag_system.src.utils.logger import setup_logger
+from config.settings import get_settings
+from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 

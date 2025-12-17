@@ -5,8 +5,8 @@ import os
 import sys
 from pathlib import Path
 
-from rag_system.src.rag_pipeline import RAGPipeline
-from rag_system.src.utils.logger import setup_logger
+from src.rag_pipeline import RAGPipeline
+from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 

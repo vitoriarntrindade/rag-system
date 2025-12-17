@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from rag_system.src.utils.logger import setup_logger
+from src.utils.logger import setup_logger
 
 
 class TestSetupLogger:

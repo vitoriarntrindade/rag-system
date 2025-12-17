@@ -168,11 +168,12 @@ Repository = "https://github.com/vitoriarntrindade/rag-system"
 Issues = "https://github.com/vitoriarntrindade/rag-system/issues"
 
 [project.scripts]
-rag = "rag_system.main:main"
+rag = "main:main"
 
 [tool.setuptools]
-packages = ["rag_system", "rag_system.src", "rag_system.src.utils", "rag_system.config", "rag_system.tests"]
-package-dir = {"rag_system" = "."}
+py-modules = ["main", "example_usage"]
 
-[tool.setuptools.package-data]
-rag_system = ["py.typed"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "config*", "tests*"]
+namespaces = false

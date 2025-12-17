@@ -3,7 +3,7 @@
 import pytest
 from langchain_core.documents import Document
 
-from rag_system.src.text_processor import TextProcessor
+from src.text_processor import TextProcessor
 
 
 class TestTextProcessorInitialization:

@@ -5,8 +5,8 @@ from typing import List
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from rag_system.config.settings import get_settings
-from rag_system.src.utils.logger import setup_logger
+from config.settings import get_settings
+from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 

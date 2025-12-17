@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from langchain_core.documents import Document
 
-from rag_system.src.vector_store import VectorStore
+from src.vector_store import VectorStore
 
 
 class TestVectorStoreInitialization:

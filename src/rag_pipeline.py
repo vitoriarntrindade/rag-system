@@ -6,13 +6,13 @@ from typing import List, Optional, Tuple
 
 from langchain_core.documents import Document
 
-from rag_system.config.settings import Settings, get_settings
-from rag_system.src.document_loader import DocumentLoader
-from rag_system.src.generator import ResponseGenerator
-from rag_system.src.retriever import DocumentRetriever
-from rag_system.src.text_processor import TextProcessor
-from rag_system.src.utils.logger import setup_logger
-from rag_system.src.vector_store import VectorStore
+from config.settings import Settings, get_settings
+from src.document_loader import DocumentLoader
+from src.generator import ResponseGenerator
+from src.retriever import DocumentRetriever
+from src.text_processor import TextProcessor
+from src.utils.logger import setup_logger
+from src.vector_store import VectorStore
 
 logger = setup_logger(__name__)
 
