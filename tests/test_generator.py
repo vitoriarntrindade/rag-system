@@ -6,7 +6,7 @@ import pytest
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage
 
-from src.generator import ResponseGenerator
+from rag_system.src.generator import ResponseGenerator
 
 
 class TestResponseGeneratorInitialization:

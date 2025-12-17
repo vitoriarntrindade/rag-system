@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from config.settings import Settings, get_settings
+from rag_system.config.settings import Settings, get_settings
 
 
 class TestSettingsInitialization:

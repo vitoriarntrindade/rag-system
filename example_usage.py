@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import RAGPipeline
-from src.rag_pipeline import RAGPipeline
+from rag_system.src.rag_pipeline import RAGPipeline
 
 
 def main():
