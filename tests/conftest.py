@@ -4,32 +4,54 @@ import os
 import tempfile
 from pathlib import Path
 from typing import Generator
+from unittest.mock import MagicMock
 
 import pytest
 from langchain_core.documents import Document
 
+from src.ports.embedding_provider import BaseEmbeddingProvider
+from src.ports.llm_provider import BaseLLMProvider
+
 
 @pytest.fixture
 def mock_api_key() -> str:
-    """
-    Provide a mock OpenAI API key for testing.
-    
-    Returns:
-        Mock API key string
-    """
+    """Provide a mock API key for testing (provider-agnostic)."""
     return "sk-test-mock-api-key-12345"
+
+
+@pytest.fixture
+def mock_llm_provider() -> BaseLLMProvider:
+    """
+    Provide a mock LLM provider that satisfies BaseLLMProvider.
+
+    Returns a pre-configured mock so tests never hit a real LLM.
+    """
+    provider = MagicMock(spec=BaseLLMProvider)
+    provider.generate.return_value = "Mocked LLM response"
+    return provider
+
+
+@pytest.fixture
+def mock_embedding_provider() -> BaseEmbeddingProvider:
+    """
+    Provide a mock embedding provider that satisfies BaseEmbeddingProvider.
+
+    Returns a pre-configured mock so tests never call a real embedding API.
+    """
+    provider = MagicMock(spec=BaseEmbeddingProvider)
+    provider.embed_documents.return_value = [[0.1, 0.2, 0.3]]
+    provider.embed_query.return_value = [0.1, 0.2, 0.3]
+    return provider
 
 
 @pytest.fixture
 def set_test_api_key(mock_api_key: str) -> Generator[str, None, None]:
     """
     Set mock API key in environment for test duration.
-    
-    Args:
-        mock_api_key: Mock API key fixture
-    
-    Yields:
-        Mock API key string
+
+    Kept for backwards compatibility with tests that still rely on
+    environment-level key injection (e.g. third-party libs that read
+    OPENAI_API_KEY internally).
     """
     original_key = os.environ.get("OPENAI_API_KEY")
     os.environ["OPENAI_API_KEY"] = mock_api_key
@@ -37,7 +59,7 @@ def set_test_api_key(mock_api_key: str) -> Generator[str, None, None]:
     if original_key:
         os.environ["OPENAI_API_KEY"] = original_key
     else:
-        del os.environ["OPENAI_API_KEY"]
+        os.environ.pop("OPENAI_API_KEY", None)
 
 
 @pytest.fixture
