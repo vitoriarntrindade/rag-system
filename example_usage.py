@@ -29,12 +29,12 @@ def main():
     
     # Initialize pipeline with explicit API key injection
     print("Initializing RAG Pipeline...")
-    pipeline = RAGPipeline(openai_api_key=api_key)
+    pipeline = RAGPipeline(api_key=api_key)
     
     # Example 1: Ingest a single document
     print("\n=== Example 1: Ingest Single Document ===")
     pipeline.ingest_documents(
-        file_path=Path("data/understanding_climate_change.pdf")
+        file_path=Path("data/Understanding_Climate_Change.pdf")
     )
     
     # Example 2: Query the system
