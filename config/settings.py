@@ -1,11 +1,10 @@
 """Configuration management for RAG system using Pydantic Settings."""
 
-import os
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -19,9 +18,20 @@ class Settings(BaseSettings):
     when creating RAGPipeline instances for better security and flexibility.
     """
     
+    # Provider selection — which backend to use for LLM and embeddings.
+    # Supported values: "openai"  (future: "azure", "ollama")
+    llm_provider: str = Field(
+        default="openai",
+        description="LLM provider to use (openai | azure | ollama)"
+    )
+    embedding_provider: str = Field(
+        default="openai",
+        description="Embedding provider to use (openai | azure | ollama)"
+    )
+
     # OpenAI Configuration
     openai_api_key: Optional[str] = Field(
-        default=None, 
+        default=None,
         description="OpenAI API key for embeddings and LLM (optional, prefer injection)"
     )
     openai_embedding_model: str = Field(
@@ -97,12 +107,12 @@ class Settings(BaseSettings):
         default=True,
         description="Whether to log to file in addition to console"
     )
-    
-    class Config:
-        """Pydantic configuration."""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
 
 
 def get_settings(**overrides) -> Settings:
