@@ -3,10 +3,8 @@
 from typing import List, Tuple
 
 from langchain_core.documents import Document
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
 
-from config.settings import get_settings
+from src.ports.llm_provider import BaseLLMProvider
 from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -36,32 +34,23 @@ Context:
     
     def __init__(
         self,
-        model: str = None,
-        temperature: float = None,
-        system_prompt: str = None
+        llm_provider: BaseLLMProvider,
+        system_prompt: str = None,
     ):
         """
         Initialize the response generator.
-        
+
         Args:
-            model: Name of the OpenAI chat model. If None, uses default settings
-            temperature: Temperature for generation. If None, uses default settings
-            system_prompt: Custom system prompt template. If None, uses default
+            llm_provider:  Any object that implements BaseLLMProvider.
+                           The generator does not know (or care) whether
+                           it is OpenAI, Ollama, Azure, etc.
+            system_prompt: Custom system prompt template with a {context}
+                           placeholder. If None, uses DEFAULT_SYSTEM_PROMPT.
         """
-        settings = get_settings()
-        self.model_name = model or settings.openai_chat_model
-        self.temperature = temperature if temperature is not None else settings.openai_temperature
+        self.llm_provider = llm_provider
         self.system_prompt_template = system_prompt or self.DEFAULT_SYSTEM_PROMPT
-        
-        self.llm = ChatOpenAI(
-            model=self.model_name,
-            temperature=self.temperature
-        )
-        
-        logger.info(
-            f"ResponseGenerator initialized with model={self.model_name}, "
-            f"temperature={self.temperature}"
-        )
+
+        logger.info("ResponseGenerator initialized")
     
     def _format_context(self, documents: List[Document]) -> str:
         """
@@ -100,23 +89,20 @@ Context:
         
         # Format context
         context = self._format_context(context_documents)
-        
-        # Create messages
-        system_message = SystemMessage(
-            content=self.system_prompt_template.format(context=context)
-        )
-        user_message = HumanMessage(content=f"Question: {query}")
-        
-        # Generate response
+
+        # Build prompts
+        system_prompt = self.system_prompt_template.format(context=context)
+        user_message = f"Question: {query}"
+
+        # Generate response — delegate to the injected provider
         try:
-            response = self.llm.invoke([system_message, user_message])
-            answer = response.content
-            
+            answer = self.llm_provider.generate(system_prompt, user_message)
+
             logger.info("Response generated successfully")
             logger.debug(f"Answer length: {len(answer)} characters")
-            
+
             return answer, context_documents
-        
+
         except Exception as e:
             logger.error(f"Error generating response: {e}")
             raise

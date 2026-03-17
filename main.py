@@ -5,6 +5,8 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from src.rag_pipeline import RAGPipeline
 from src.utils.logger import setup_logger
 
@@ -13,6 +15,9 @@ logger = setup_logger(__name__)
 
 def main():
     """Main CLI entry point for the RAG system."""
+    # Load .env file before reading environment variables
+    load_dotenv()
+
     # Load API key from environment
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -135,7 +140,7 @@ Supported file types: PDF, TXT, DOCX, DOC, MD
     
     try:
         # Initialize pipeline with API key
-        pipeline = RAGPipeline(openai_api_key=api_key)
+        pipeline = RAGPipeline(api_key=api_key)
         
         if args.command == "ingest":
             if not args.file and not args.directory:
