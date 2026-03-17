@@ -5,9 +5,8 @@ from typing import List, Optional
 
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
 
-from config.settings import get_settings
+from src.ports.embedding_provider import BaseEmbeddingProvider
 from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -23,26 +22,30 @@ class VectorStore:
     
     def __init__(
         self,
+        embedding_provider: BaseEmbeddingProvider,
         persist_directory: Optional[Path] = None,
-        embedding_model: Optional[str] = None
     ):
         """
         Initialize the vector store.
-        
+
         Args:
-            persist_directory: Directory to persist the vector store.
-                             If None, uses default settings
-            embedding_model: Name of the OpenAI embedding model.
-                           If None, uses default settings
+            embedding_provider: Any object that implements BaseEmbeddingProvider.
+                                The vector store does not know (or care) whether
+                                it is OpenAI, Ollama, HuggingFace, etc.
+            persist_directory:  Directory to persist the Chroma database.
+                                If None, must be set before any operation.
         """
-        settings = get_settings()
-        self.persist_directory = persist_directory or settings.vector_store_path
-        self.embedding_model_name = embedding_model or settings.openai_embedding_model
-        
-        logger.info(f"Initializing VectorStore with model: {self.embedding_model_name}")
-        
-        self.embeddings = OpenAIEmbeddings(model=self.embedding_model_name)
+        self.embedding_provider = embedding_provider
+        self.persist_directory = persist_directory
         self.vectorstore: Optional[Chroma] = None
+
+        if persist_directory is None:
+            logger.warning(
+                "VectorStore created without persist_directory. "
+                "You must set it before calling create_from_documents() or load_existing()."
+            )
+
+        logger.info("VectorStore initialized")
     
     def create_from_documents(self, documents: List[Document]) -> Chroma:
         """
@@ -60,7 +63,7 @@ class VectorStore:
         
         self.vectorstore = Chroma.from_documents(
             documents=documents,
-            embedding=self.embeddings,
+            embedding=self.embedding_provider,
             persist_directory=str(self.persist_directory)
         )
         
@@ -87,7 +90,7 @@ class VectorStore:
         
         self.vectorstore = Chroma(
             persist_directory=str(self.persist_directory),
-            embedding_function=self.embeddings
+            embedding_function=self.embedding_provider
         )
         
         logger.info("Vector store loaded successfully")
@@ -119,15 +122,15 @@ class VectorStore:
     def similarity_search(
         self,
         query: str,
-        k: int = None
+        k: int = 5,
     ) -> List[Document]:
         """
         Perform similarity search on the vector store.
         
         Args:
             query: Query string to search for
-            k: Number of results to return. If None, uses default settings
-        
+            k: Number of results to return. Defaults to 5.
+
         Returns:
             List of most similar Document objects
         
@@ -136,11 +139,7 @@ class VectorStore:
         """
         if self.vectorstore is None:
             raise RuntimeError("Vector store not initialized. Call load_existing() or create_from_documents() first")
-        
-        if k is None:
-            settings = get_settings()
-            k = settings.retrieval_top_k
-        
+
         logger.debug(f"Performing similarity search for query with k={k}")
         
         results = self.vectorstore.similarity_search(query, k=k)

@@ -1,6 +1,5 @@
 """Main RAG Pipeline orchestrator."""
 
-import os
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -8,7 +7,10 @@ from langchain_core.documents import Document
 
 from config.settings import Settings, get_settings
 from src.document_loader import DocumentLoader
+from src.factories.provider_factory import create_embedding_provider, create_llm_provider
 from src.generator import ResponseGenerator
+from src.ports.embedding_provider import BaseEmbeddingProvider
+from src.ports.llm_provider import BaseLLMProvider
 from src.retriever import DocumentRetriever
 from src.text_processor import TextProcessor
 from src.utils.logger import setup_logger
@@ -20,78 +22,96 @@ logger = setup_logger(__name__)
 class RAGPipeline:
     """
     Main RAG (Retrieval-Augmented Generation) pipeline orchestrator.
-    
+
     This class integrates all components of the RAG system:
     - Document loading
     - Text processing and chunking
     - Vector storage and embeddings
     - Document retrieval
     - Response generation
-    
-    Security Note:
-        The OpenAI API key must be provided explicitly when creating instances
-        of this class to ensure proper key management and avoid accidental exposure.
+
+    The pipeline is provider-agnostic: LLM and embedding backends are
+    resolved by the factory based on settings, or injected directly for
+    testing. No OpenAI-specific code lives here.
     """
     
     def __init__(
         self,
-        openai_api_key: str,
+        api_key: str,
         vector_store_path: Optional[Path] = None,
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
         retrieval_top_k: Optional[int] = None,
-        settings: Optional[Settings] = None
+        settings: Optional[Settings] = None,
+        llm_provider: Optional[BaseLLMProvider] = None,
+        embedding_provider: Optional[BaseEmbeddingProvider] = None,
     ):
         """
         Initialize the RAG pipeline with all components.
-        
+
         Args:
-            openai_api_key: OpenAI API key (required). This ensures explicit
-                           key management and prevents accidental exposure.
-            vector_store_path: Path to vector store. If None, uses settings
-            chunk_size: Size of text chunks. If None, uses settings
-            chunk_overlap: Overlap between chunks. If None, uses settings
-            retrieval_top_k: Number of docs to retrieve. If None, uses settings
-            settings: Custom Settings instance. If None, creates default settings
-        
+            api_key:            Credential for the configured provider (e.g. OpenAI key).
+                                Passed explicitly to keep credentials out of global state.
+            vector_store_path:  Path to persist the Chroma database.
+                                If None, uses ``settings.vector_store_path``.
+            chunk_size:         Text chunk size. If None, uses settings.
+            chunk_overlap:      Chunk overlap. If None, uses settings.
+            retrieval_top_k:    Docs to retrieve per query. If None, uses settings.
+            settings:           Custom Settings instance. If None, loads from env.
+            llm_provider:       Inject a custom BaseLLMProvider (useful for tests).
+                                If None, the factory creates one from settings.
+            embedding_provider: Inject a custom BaseEmbeddingProvider (useful for tests).
+                                If None, the factory creates one from settings.
+
         Raises:
-            ValueError: If openai_api_key is empty or None
-        
-        Example:
-            >>> import os
-            >>> api_key = os.getenv("OPENAI_API_KEY")
-            >>> pipeline = RAGPipeline(openai_api_key=api_key)
+            ValueError: If ``api_key`` is empty or None (when no provider injected).
+
+        Example::
+
+            import os
+            pipeline = RAGPipeline(api_key=os.getenv("OPENAI_API_KEY"))
         """
-        if not openai_api_key:
-            error_msg = (
-                "OpenAI API key is required. Please provide it explicitly:\n"
-                "  pipeline = RAGPipeline(openai_api_key='your-key')\n"
-                "or from environment:\n"
-                "  pipeline = RAGPipeline(openai_api_key=os.getenv('OPENAI_API_KEY'))"
-            )
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-        
-        logger.info("Initializing RAG Pipeline")
-        
-        # Set OpenAI API key in environment for langchain components
-        os.environ['OPENAI_API_KEY'] = openai_api_key
-        
-        # Load or create settings
         self.settings = settings or get_settings()
-        
+
+        # Allow skipping api_key validation when providers are fully injected
+        # (common in tests that mock both providers).
+        if not api_key and not (llm_provider and embedding_provider):
+            raise ValueError(
+                "api_key is required unless both llm_provider and "
+                "embedding_provider are injected explicitly."
+            )
+
+        logger.info("Initializing RAG Pipeline")
+
+        # Resolve providers — injected ones take priority (enables testing without API)
+        _llm = llm_provider or create_llm_provider(self.settings, api_key)
+        _emb = embedding_provider or create_embedding_provider(self.settings, api_key)
+
+        # Override settings with explicit constructor params where provided
+        if chunk_size is not None:
+            self.settings = self.settings.model_copy(update={"chunk_size": chunk_size})
+        if chunk_overlap is not None:
+            self.settings = self.settings.model_copy(update={"chunk_overlap": chunk_overlap})
+        if retrieval_top_k is not None:
+            self.settings = self.settings.model_copy(update={"retrieval_top_k": retrieval_top_k})
+
+        persist_dir = vector_store_path or self.settings.vector_store_path
+
         # Initialize components
         self.document_loader = DocumentLoader()
         self.text_processor = TextProcessor(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap
+            chunk_size=self.settings.chunk_size,
+            chunk_overlap=self.settings.chunk_overlap,
         )
-        self.vector_store = VectorStore(persist_directory=vector_store_path)
+        self.vector_store = VectorStore(
+            embedding_provider=_emb,
+            persist_directory=persist_dir,
+        )
         self.retriever: Optional[DocumentRetriever] = None
-        self.generator = ResponseGenerator()
-        
+        self.generator = ResponseGenerator(llm_provider=_llm)
+
         self._is_initialized = False
-        
+
         logger.info("RAG Pipeline initialized successfully")
     
     def ingest_documents(

@@ -5,7 +5,6 @@ from typing import List
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 
-from config.settings import get_settings
 from src.utils.logger import setup_logger
 from src.vector_store import VectorStore
 
@@ -23,8 +22,8 @@ class DocumentRetriever:
     def __init__(
         self,
         vector_store: VectorStore,
-        search_type: str = None,
-        top_k: int = None
+        search_type: str = "similarity",
+        top_k: int = 5
     ):
         """
         Initialize the document retriever.
@@ -32,13 +31,12 @@ class DocumentRetriever:
         Args:
             vector_store: VectorStore instance to use for retrieval
             search_type: Type of search (similarity, mmr, etc.).
-                        If None, uses default settings
-            top_k: Number of documents to retrieve. If None, uses default settings
+                        Defaults to "similarity"
+            top_k: Number of documents to retrieve. Defaults to 5
         """
-        settings = get_settings()
         self.vector_store = vector_store
-        self.search_type = search_type or settings.retrieval_search_type
-        self.top_k = top_k or settings.retrieval_top_k
+        self.search_type = search_type
+        self.top_k = top_k
         
         logger.info(
             f"DocumentRetriever initialized with search_type={self.search_type}, "
